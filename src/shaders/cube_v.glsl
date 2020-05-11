@@ -8,11 +8,11 @@ out vec3 Normal;
 out vec3 Color;
 
 uniform mat4 projection;
-uniform mat4 matrix;
+uniform mat4 model;
 uniform mat4 camera;
 
 void main() {
     Normal = normal;
     Color = color;
-    gl_Position = projection * camera * matrix * vec4(position, 1.0);
+    gl_Position = projection * camera * model * vec4(position, 1.0);
 }
