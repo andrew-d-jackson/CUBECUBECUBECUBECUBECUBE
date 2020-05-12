@@ -99,7 +99,7 @@ fn main() {
   //  display.gl_window().window().set_cursor_position(LogicalPosition::new(50,50));
 
     let cube_obj = load_object("./src/objs/cube.obj".to_string());
-    let map = vxl::load_map("./src/maps/Aquila.vxl".to_string(), (512, 512, 512));
+    let map = vxl::load_map("./src/maps/London.vxl".to_string(), (512, 512, 512));
     let (vertexes, indices) = map::create_buffers(map, cube_obj);
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
     let index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
@@ -108,6 +108,10 @@ fn main() {
     let quad_vertex_buffer = VertexBuffer::new(&display, &quad_vertexs.as_ref()).unwrap();
     let quad_index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &quad_indexes.as_ref()).unwrap();
 
+    let (ocean_vertexs, ocean_indexes) = map::create_ocean_buffer();
+    let ocean_vertex_buffer = VertexBuffer::new(&display, &ocean_vertexs.as_ref()).unwrap();
+    let ocean_index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &ocean_indexes.as_ref()).unwrap();
+
     let (width, height) = display.get_framebuffer_dimensions();
 
     let depth_texture = (
@@ -115,6 +119,10 @@ fn main() {
     );
 
     let sun_depth_texture = (
+        DepthTexture2d::empty(&display, width, height).unwrap()
+    );
+
+    let sun_depth_texture2 = (
         DepthTexture2d::empty(&display, width, height).unwrap()
     );
 
@@ -151,34 +159,46 @@ fn main() {
         &display,
         shader::load_shader_string("./src/shaders/cube_v.glsl".to_string()),
         shader::load_shader_string("./src/shaders/cube_f.glsl".to_string()),
-    );
+    ).unwrap();
 
     let mut depth_program = shader::create_program(
         &display,
         shader::load_shader_string("./src/shaders/cube_depth_v.glsl".to_string()),
         shader::load_shader_string("./src/shaders/cube_depth_f.glsl".to_string()),
-    );
+    ).unwrap();
 
     let mut quad_program = shader::create_program(
         &display,
         shader::load_shader_string("./src/shaders/2d_v.glsl".to_string()),
         shader::load_shader_string("./src/shaders/2d_f.glsl".to_string()),
-    );
+    ).unwrap();
 
     let mut shadow_program = shader::create_program(
         &display,
         shader::load_shader_string("./src/shaders/shadows_v.glsl".to_string()),
         shader::load_shader_string("./src/shaders/shadows_f.glsl".to_string()),
-    );
+    ).unwrap();
 
     let mut normal_program = shader::create_program(
         &display,
         shader::load_shader_string("./src/shaders/cube_normal_v.glsl".to_string()),
         shader::load_shader_string("./src/shaders/cube_normal_f.glsl".to_string()),
-    );
+    ).unwrap();
+
+    let mut ocean_program = shader::create_program(
+        &display,
+        shader::load_shader_string("./src/shaders/ocean_v.glsl".to_string()),
+        shader::load_shader_string("./src/shaders/ocean_f.glsl".to_string()),
+    ).unwrap();
 
     let mut x: f32 = 0.0;
     let mut active_shader: String = "player".to_string();
+
+    let up_vector = glm::vec3(0.0f32, 1.0, 0.0);
+    let mut sun_position = &camera_position + glm::vec3(0.2f32, -1.0, 0.2);
+    let mut sun_look = glm::look_at(
+        &sun_position, &camera_position, &up_vector,
+    );
     start_loop(event_loop, move |events| {
         //display.gl_window().window().set_cursor_position(LogicalPosition::new(50,50));
 
@@ -191,6 +211,7 @@ fn main() {
         keyboard_inputs.reset_presses();
 
         let mut sun_buffer = glium::framebuffer::SimpleFrameBuffer::depth_only(&display, &sun_depth_texture).unwrap();
+        let mut sun_buffer2 = glium::framebuffer::SimpleFrameBuffer::depth_only(&display, &sun_depth_texture2).unwrap();
 
         let mut depth_buffer = glium::framebuffer::SimpleFrameBuffer::depth_only(&display, &depth_texture).unwrap();
         let mut color_buffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &color_texture, &color_depth_texture).unwrap();
@@ -201,7 +222,6 @@ fn main() {
             camera_rotation_abs.x.cos(), camera_rotation_abs.y.sin(), camera_rotation_abs.x.sin()
         );
         let camera_target = camera_position + camera_direction;
-        let up_vector = glm::vec3(0.0f32, 1.0, 0.0);
 
         let camera = glm::look_at(
             &camera_position, &camera_target, &up_vector,
@@ -211,13 +231,13 @@ fn main() {
         let projection_matrix = glm::perspective(1f32, 55f32, 0.01f32, 10f32);
         let projection = projection_matrix.as_ref();
 
-        let sun_position = &camera_position + glm::vec3(0.2f32, -1.0, 0.2);
-        let sun_look = glm::look_at(
-            &sun_position, &camera_position, &up_vector,
-        );
-        let sun_projection = glm::ortho(-1.5f32, 1.5, -1.5, 1.5, 0.01, 3.0);
+        let sun_projection = glm::ortho(-0.5f32, 0.5, -0.5, 0.5, 0.01, 3.0);
         let sun_projection_matrix = sun_projection.as_ref();
-        let sun_camera_matrix = sun_look.as_ref();
+
+        let sun_camera_tmp = sun_look.clone();
+        let sun_camera_matrix = sun_camera_tmp.as_ref();
+        let sun_projection2 = glm::ortho(-5.5f32, 5.5, -5.5, 5.5, 0.01, 3.0);
+        let sun_projection2_matrix = sun_projection2.as_ref();
 
         for event in events.iter() {
             match event {
@@ -273,29 +293,39 @@ fn main() {
 
         if keyboard_inputs.was_released(VirtualKeyCode::P) {
             println!("Hello");
-            program = shader::create_program(
+            let programres = shader::create_program(
                 &display,
                 shader::load_shader_string("./src/shaders/cube_v.glsl".to_string()),
                 shader::load_shader_string("./src/shaders/cube_f.glsl".to_string()),
             );
+            match programres {
+                Ok(prog) => program = prog,
+                Err(e) => println!("{}", e),
+            }
 
             depth_program = shader::create_program(
                 &display,
                 shader::load_shader_string("./src/shaders/cube_depth_v.glsl".to_string()),
                 shader::load_shader_string("./src/shaders/cube_depth_f.glsl".to_string()),
-            );
+            ).unwrap();
 
             quad_program = shader::create_program(
                 &display,
                 shader::load_shader_string("./src/shaders/2d_v.glsl".to_string()),
                 shader::load_shader_string("./src/shaders/2d_f.glsl".to_string()),
-            );
+            ).unwrap();
 
             shadow_program = shader::create_program(
                 &display,
                 shader::load_shader_string("./src/shaders/shadows_v.glsl".to_string()),
                 shader::load_shader_string("./src/shaders/shadows_f.glsl".to_string()),
-            );
+            ).unwrap();
+
+            ocean_program = shader::create_program(
+                &display,
+                shader::load_shader_string("./src/shaders/ocean_v.glsl".to_string()),
+                shader::load_shader_string("./src/shaders/ocean_f.glsl".to_string()),
+            ).unwrap();
         }
 
 
@@ -303,7 +333,7 @@ fn main() {
             active_shader = "player".to_string();
         }
         if keyboard_inputs.was_released(VirtualKeyCode::N) {
-            active_shader = "player_depth".to_string();
+            active_shader = "sun2".to_string();
         }
         if keyboard_inputs.was_released(VirtualKeyCode::M) {
             active_shader = "sun".to_string();
@@ -313,6 +343,13 @@ fn main() {
         }
         if keyboard_inputs.was_released(VirtualKeyCode::C) {
             active_shader = "normal".to_string();
+        }
+
+        if keyboard_inputs.was_released(VirtualKeyCode::L) {
+            sun_position = camera_position.clone();
+            sun_look = glm::look_at(
+                &camera_position, &camera_target, &up_vector,
+            );
         }
 
         let mut target = display.draw();
@@ -327,6 +364,15 @@ fn main() {
             .. Default::default()
         };
 
+        let sun_parameters = DrawParameters {
+            depth: Depth {
+                test: DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            },
+            backface_culling: glium::draw_parameters::BackfaceCullingMode::CullCounterClockwise,
+            .. Default::default()
+        };
 
         let model_matrix = [
             [0.01, 0.0, 0.0, 0.0],
@@ -349,6 +395,20 @@ fn main() {
             &draw_parameters
         ).unwrap();
 
+        sun_buffer2.clear_color(1.0, 1.0, 1.0, 1.0);
+        sun_buffer2.clear_depth(1.0);
+        sun_buffer2.draw(
+            &vertex_buffer,
+            &index_buffer,
+            &depth_program,
+            &uniform! {
+                model: model_matrix,
+                camera: *sun_camera_matrix,
+                projection: *sun_projection2_matrix,
+            },
+            &draw_parameters
+        ).unwrap();
+/*
         depth_buffer.clear_color(1.0, 1.0, 1.0, 1.0);
         depth_buffer.clear_depth(1.0);
         depth_buffer.draw(
@@ -362,8 +422,8 @@ fn main() {
             },
             &draw_parameters
         ).unwrap();
-
-        color_buffer.clear_color_and_depth((1.0f32, 0.0, 0.0, 0.0), 1.0);
+*/
+        color_buffer.clear_color_and_depth((0.0f32, 0.3, 1.0, 0.0), 1.0);
         color_buffer.draw(
             &vertex_buffer,
             &index_buffer,
@@ -371,11 +431,34 @@ fn main() {
             &uniform! {
                 model: model_matrix,
                 camera: *camera_matrix,
-                projection: *projection
+                projection: *projection,
+                sunDepth: glium::uniforms::Sampler::new(&sun_depth_texture),
+                sunProjection: *sun_projection_matrix,
+                sunDepth2: glium::uniforms::Sampler::new(&sun_depth_texture2),
+                sunProjection2: *sun_projection2_matrix,
+                sunView: *sun_camera_matrix,
             },
             &draw_parameters
         ).unwrap();
 
+        color_buffer.draw(
+            &ocean_vertex_buffer,
+            &ocean_index_buffer,
+            &ocean_program,
+            &uniform! {
+                model: model_matrix,
+                camera: *camera_matrix,
+                projection: *projection,
+                sunDepth: glium::uniforms::Sampler::new(&sun_depth_texture),
+                sunProjection: *sun_projection_matrix,
+                sunDepth2: glium::uniforms::Sampler::new(&sun_depth_texture2),
+                sunProjection2: *sun_projection2_matrix,
+                sunView: *sun_camera_matrix,
+
+            },
+            &draw_parameters
+        ).unwrap();
+/*
         normal_buffer.clear_color_and_depth((0.0f32, 0.0, 0.0, 0.0), 1.0);
         normal_buffer.draw(
             &vertex_buffer,
@@ -388,10 +471,10 @@ fn main() {
             },
             &draw_parameters
         ).unwrap();
-
+*/
         //target.clear_color_and_depth((0.0f32, 0.0, 0.0, 0.0), 0.0);
         target.clear_color_and_depth((0.0, 1.0, 1.0, 1.0), 1.0);
-        shadow_buffer.clear_color(0.0, 1.0, 1.0, 1.0);
+  //      shadow_buffer.clear_color(0.0, 1.0, 1.0, 1.0);
         /*target.draw(
             &vertex_buffer,
             &index_buffer,
@@ -414,13 +497,13 @@ fn main() {
             },
                 &draw_parameters
             ).unwrap();
-        } else if active_shader == "player_depth".to_string() {
-            target.draw(
+        } else if active_shader == "sun2".to_string() {
+          target.draw(
                 &quad_vertex_buffer,
                 &quad_index_buffer,
                 &quad_program,
                 &uniform! {
-                texFramebuffer: glium::uniforms::Sampler::new(&depth_texture)
+                texFramebuffer: glium::uniforms::Sampler::new(&sun_depth_texture2)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
 
@@ -441,7 +524,7 @@ fn main() {
                 &draw_parameters
             ).unwrap();
         } else if active_shader == "shadow".to_string() {
-            target.draw(
+          /*target.draw(
                 &quad_vertex_buffer,
                 &quad_index_buffer,
                 &shadow_program,
@@ -455,9 +538,9 @@ fn main() {
                     cameraView: *camera_matrix,
                 },
                 &draw_parameters
-            ).unwrap();
+            ).unwrap();*/
         } else if active_shader == "normal".to_string() {
-            target.draw(
+    /*     target.draw(
                 &quad_vertex_buffer,
                 &quad_index_buffer,
                 &quad_program,
@@ -465,7 +548,7 @@ fn main() {
                     texFramebuffer: glium::uniforms::Sampler::new(&normal_texture)
                 },
                 &draw_parameters
-            ).unwrap();
+            ).unwrap();*/
         }
 /*
         target.draw(

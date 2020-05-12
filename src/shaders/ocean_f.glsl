@@ -1,13 +1,11 @@
 #version 140
-in vec3 Normal;
-in vec3 Color;
-in vec4 SunPosition;
-in vec4 SunPosition2;
 
 out vec4 color;
 
 uniform sampler2D sunDepth;
 uniform sampler2D sunDepth2;
+in vec4 SunPosition;
+in vec4 SunPosition2;
 
 float getShadow(vec3 projCoords, sampler2D text) {
     float sunDepthAtPos = texture(text, projCoords.xy).r;
@@ -33,12 +31,7 @@ float getShadow(vec3 projCoords, sampler2D text) {
 }
 
 void main() {
-    float brightness = dot(normalize(Normal), normalize(vec3(50.0, -70.0, 30.0)));
-    vec3 reg_color = vec3(Color.x / 255, Color.y / 255, Color.z / 255);
-    vec3 dark_color = reg_color / 2;
-    vec3 unshadowed = mix(dark_color, reg_color, brightness);
-    unshadowed = reg_color;
-
+    vec3 unshadowed = vec3(0.0, 0.2, 1.0);
     vec3 projCoords = SunPosition.xyz / SunPosition.w;
     projCoords = projCoords * 0.5 + 0.5;
 

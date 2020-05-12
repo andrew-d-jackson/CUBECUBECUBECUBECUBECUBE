@@ -15,7 +15,32 @@ pub struct MyVertex {
     pub normal: [f32; 3],
 }
 
+
+#[derive(Clone, Copy, Debug)]
+pub struct OceanVertex {
+    pub position: [f32; 3],
+}
+
 implement_vertex!(MyVertex, position, color, normal);
+implement_vertex!(OceanVertex, position);
+
+pub fn create_ocean_buffer() -> (Vec<OceanVertex>, Vec<u32>) {
+    (
+        vec![
+            OceanVertex { position: [0f32, 200.0, 0.0] },
+            OceanVertex { position: [0.0, 200.0, 512.0] },
+            OceanVertex { position: [512.0, 200.0, 0.0] },
+
+            OceanVertex { position: [512.0, 200.0, 512.0] },
+            OceanVertex { position: [512.0, 200.0, 0.0] },
+            OceanVertex { position: [0.0, 200.0, 512.0] },
+        ],
+        vec![
+            0, 1, 2,
+            3, 4, 5,
+        ]
+    )
+}
 
 pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<MyVertex>, Vec<u32>) {
     let mut indices: Vec<u32> = vec![];

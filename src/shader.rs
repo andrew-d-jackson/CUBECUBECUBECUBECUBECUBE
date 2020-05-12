@@ -1,4 +1,4 @@
-use glium::{Program, Display};
+use glium::{Program, Display, ProgramCreationError};
 use std::fs::File;
 use std::io::Read;
 
@@ -9,6 +9,6 @@ pub fn load_shader_string(filename: String) -> String {
     ret
 }
 
-pub fn create_program(display: &Display, vertex_shader: String, fragment_shader: String) -> Program {
-    Program::from_source(display, vertex_shader.as_ref(), fragment_shader.as_ref(), None).unwrap()
+pub fn create_program(display: &Display, vertex_shader: String, fragment_shader: String) -> Result<Program, ProgramCreationError> {
+    Program::from_source(display, vertex_shader.as_ref(), fragment_shader.as_ref(), None)
 }
