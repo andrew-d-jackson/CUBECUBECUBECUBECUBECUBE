@@ -157,8 +157,8 @@ fn main() {
 
     let mut program = shader::create_program(
         &display,
-        shader::load_shader_string("./src/shaders/cube_v.glsl".to_string()),
-        shader::load_shader_string("./src/shaders/cube_f.glsl".to_string()),
+        shader::load_shader_string("./src/shaders/cube_color_v.glsl".to_string()),
+        shader::load_shader_string("./src/shaders/cube_color_f.glsl".to_string()),
     ).unwrap();
 
     let mut depth_program = shader::create_program(
@@ -295,8 +295,8 @@ fn main() {
             println!("Hello");
             let programres = shader::create_program(
                 &display,
-                shader::load_shader_string("./src/shaders/cube_v.glsl".to_string()),
-                shader::load_shader_string("./src/shaders/cube_f.glsl".to_string()),
+                shader::load_shader_string("./src/shaders/cube_color_v.glsl".to_string()),
+                shader::load_shader_string("./src/shaders/cube_color_f.glsl".to_string()),
             );
             match programres {
                 Ok(prog) => program = prog,
