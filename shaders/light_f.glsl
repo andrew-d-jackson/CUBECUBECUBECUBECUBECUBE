@@ -1,21 +1,22 @@
 #version 140
 
-uniform sampler2D sunDepth;
+uniform sampler2D lightDepth;
+uniform sampler2D currentColor;
 uniform sampler2D cameraDepth;
 uniform sampler2D cameraColor;
 uniform sampler2D cameraNormals;
 
-uniform vec3 sunPosition;
+uniform vec3 lightPosition;
+uniform vec3 lightColor;
+uniform float lightStrength;
 
-uniform mat4 sunProjection;
-uniform mat4 sunView;
+uniform mat4 lightProjection;
+uniform mat4 lightView;
 uniform mat4 cameraProjection;
 uniform mat4 cameraView;
 
 in vec2 Texcoord;
 out vec4 color;
-
-
 
 void main() {
     float z = texture(cameraDepth, Texcoord).x * 2.0 - 1;
@@ -24,31 +25,31 @@ void main() {
     viewSpacePosition /= viewSpacePosition.w;
     vec4 inWorldSpace = inverse(cameraView) * viewSpacePosition;
 
-    vec3 directionToSun = normalize(sunPosition - inWorldSpace.xyz);
+    vec3 directionToSun = normalize(lightPosition - inWorldSpace.xyz);
     vec3 normal = normalize(texture(cameraNormals, Texcoord).xyz * 2 - 1);
     float difference = dot(directionToSun, normal);
 
-    vec4 inSunSpace = sunProjection * sunView * vec4(inWorldSpace.xyz, 1.0);
+    vec4 inSunSpace = lightProjection * lightView * vec4(inWorldSpace.xyz, 1.0);
 
-    float sunDepth = texture(sunDepth, (inSunSpace.xy + 1) / 2 ).r;
+    float sunDepth = texture(lightDepth, (inSunSpace.xy + 1) / 2 ).r;
     float acDistance = distance(sunDepth * 2.0 - 1, inSunSpace.z);
     if (sunDepth * 2.0 - 1 < inSunSpace.z - 0.0001 || difference < 0) {
-        acDistance = 0.5;
+        acDistance = 0;
     } else {
-        acDistance = 0.5+(difference);
+        acDistance = lightStrength;
     }
 
     if (inSunSpace.x > 1 || inSunSpace.x < -1 || inSunSpace.y > 1 || inSunSpace.y < -1) {
-        acDistance = 0.5;
+        acDistance = 0;
     }
 
-    vec4 cameraColorVal = texture(cameraColor, Texcoord);
+    vec4 cameraColorVal = texture(currentColor, Texcoord);
 
-  //  float ao = getAO();
-
+    vec3 lightColor = lightColor * acDistance;
+    vec3 outColor = lightColor + cameraColorVal.rgb;
     vec3 cameraColorValShadowed = mix(cameraColorVal.rgb, cameraColorVal.rgb * acDistance, 1);
-//    cameraColorValShadowed = mix(cameraColorValShadowed, cameraColorValShadowed * ao, 0.5);
 
-
-    color = vec4(cameraColorValShadowed, 1.0);
+   //color = vec4(cameraColorValShadowed, 1.0);
+   //color = vec4(texture(cameraColor, Texcoord).xyz, 1.0);
+   color = vec4(outColor, 0.0);
 }

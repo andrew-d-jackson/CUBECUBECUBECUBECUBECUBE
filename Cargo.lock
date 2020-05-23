@@ -390,6 +390,7 @@ dependencies = [
  "nalgebra 0.21.0",
  "nalgebra-glm",
  "obj-rs",
+ "rand 0.6.5",
  "specs",
 ]
 
