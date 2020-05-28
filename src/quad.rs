@@ -1,4 +1,3 @@
-use obj::Obj;
 use glium::implement_vertex;
 
 #[derive(Clone, Copy, Debug)]

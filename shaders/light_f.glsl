@@ -18,6 +18,25 @@ uniform mat4 cameraView;
 in vec2 Texcoord;
 out vec4 color;
 
+float shadowing(sampler2D shadowMap, vec2 projCoords, float currentDepth) {
+    float shadow = 0.0;
+    float bias = 0.0008;
+    int samples = 1;
+    int samplesTaken = 0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = 0 - samples; x <= samples; ++x)
+    {
+        for(int y = 0 - samples; y <= samples; ++y)
+        {
+            samplesTaken += 1;
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth ? 0.0 : 1.0;        
+        }    
+    }
+    shadow /= float(samplesTaken);
+    return shadow;
+}
+
 void main() {
     float z = texture(cameraDepth, Texcoord).x * 2.0 - 1;
     vec4 clipSpacePosition = vec4(Texcoord * 2.0 - 1.0, z, 1.0);
@@ -31,13 +50,7 @@ void main() {
 
     vec4 inSunSpace = lightProjection * lightView * vec4(inWorldSpace.xyz, 1.0);
 
-    float sunDepth = texture(lightDepth, (inSunSpace.xy + 1) / 2 ).r;
-    float acDistance = distance(sunDepth * 2.0 - 1, inSunSpace.z);
-    if (sunDepth * 2.0 - 1 < inSunSpace.z - 0.0001 || difference < 0) {
-        acDistance = 0;
-    } else {
-        acDistance = lightStrength;
-    }
+    float acDistance = shadowing(lightDepth, (inSunSpace.xy + 1) / 2, (inSunSpace.z + 1) / 2);
 
     if (inSunSpace.x > 1 || inSunSpace.x < -1 || inSunSpace.y > 1 || inSunSpace.y < -1) {
         acDistance = 0;
