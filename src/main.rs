@@ -3,7 +3,7 @@ extern crate rand;
 extern crate specs;
 extern crate nalgebra_glm as glm;
 use std::io::BufReader;
-use obj::{load_obj, Obj};
+use obj::Obj;
 use std::fs::File;
 use glium::index::PrimitiveType;
 
@@ -40,9 +40,7 @@ fn create_window(event_loop: &EventLoop<()>) -> Display {
 }
 
 fn load_object(filename: String) -> Obj {
-    let input = BufReader::new(File::open(filename).unwrap());
-    let obj: Obj = load_obj(input).unwrap();
-    obj
+    Obj::load(filename).unwrap()
 }
 
 pub enum Action {
@@ -96,7 +94,8 @@ fn main() {
     let display = create_window(&event_loop);
     let (width, height) = display.get_framebuffer_dimensions();
 
-    let cube_obj = load_object("./objs/cube.obj".to_string());
+    let pizza_obj = load_object("./objs/TheRock2.obj".to_string());
+  /*  let cube_obj = load_object("./objs/cube.obj".to_string());
     let map = vxl::load_map("./maps/CityOfChicago.vxl".to_string(), (512, 512, 512));
     let (vertexes, indices) = map::create_buffers(map, cube_obj);
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
@@ -148,8 +147,14 @@ fn main() {
             index_buffer: Arc::new(Mutex::new(index_buffer)),
          })
          .with(Rotation::new())
-         .with(FlyingControls {})
          .build();
+        
+    
+    world.create_entity()
+        .with(Position { x: 0.0f32, y: 0.0, z: 0.0 })
+        .with(FlyingControls {})
+        .with(Rotation::new())
+        .build();
 
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(UpdateWindowSystem::new())
@@ -192,5 +197,5 @@ fn main() {
         } else {
             Action::Continue
         }
-    });
+    });*/
 }

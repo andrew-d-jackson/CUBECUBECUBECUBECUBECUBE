@@ -13,7 +13,7 @@ impl<'a> System<'a> for FlyingControlsSystem {
 
         let dt = window_info.delta_time;
         let rot_mul = 3.0f32;
-        let mov_mul = 2.0f32;
+        let mov_mul = 200.0f32;
 
         for (posistion, rotation, _) in (&mut position, &mut rotation, &flying_controls).join() {
             let forward_vector = glm::quat_rotate_vec3(

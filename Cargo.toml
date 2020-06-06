@@ -7,6 +7,6 @@ edition = "2018"
 [dependencies]
 glium = "*"
 nalgebra-glm = "*"
-obj-rs = "*"
+obj = "*"
 specs = "*"
 rand = "*"

@@ -18,7 +18,7 @@ impl<'a> System<'a> for UpdateWindowSystem {
     type SystemData = Write<'a, WindowInfo>;
 
     fn run(&mut self, mut window_info: Self::SystemData) {    
-        let display_mutex = window_info.display.clone().unwrap().lock().unwrap();
+        let display_mutex = window_info.display.clone().unwrap();
         let display = display_mutex.lock().unwrap();
 
         let (width, height) = display.get_framebuffer_dimensions();

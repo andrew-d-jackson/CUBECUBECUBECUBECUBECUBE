@@ -20,7 +20,7 @@ out vec4 color;
 
 float shadowing(sampler2D shadowMap, vec2 projCoords, float currentDepth) {
     float shadow = 0.0;
-    float bias = 0.0004;
+    float bias = 0.0005;
     int samples = 1;
     int samplesTaken = 0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -60,11 +60,12 @@ void main() {
    
 
     acDistance = nearShadowing;
-
+  //  acDistance = 1;
     if (inSunSpace.x > 1 || inSunSpace.x < -1 || inSunSpace.y > 1 || inSunSpace.y < -1) {
-            acDistance = farShadowing;
+       // acDistance = 0;
+        acDistance = farShadowing;
     }
-
+//
     if (difference < 0.0) {
         acDistance = 0.3;
     }

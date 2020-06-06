@@ -41,7 +41,7 @@ pub fn create_ocean_buffer() -> (Vec<OceanVertex>, Vec<u32>) {
         ]
     )
 }
-
+/*
 pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<MyVertex>, Vec<u32>) {
     let mut indices: Vec<u32> = vec![];
     let mut vertexes: Vec<MyVertex> = vec![];
@@ -81,4 +81,4 @@ pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<
     }
 
     (vertexes, indices)
-}
+}*/
