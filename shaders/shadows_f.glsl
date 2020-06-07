@@ -20,7 +20,7 @@ out vec4 color;
 
 float shadowing(sampler2D shadowMap, vec2 projCoords, float currentDepth) {
     float shadow = 0.0;
-    float bias = 0.0005;
+    float bias = 0.001;
     int samples = 1;
     int samplesTaken = 0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -68,6 +68,10 @@ void main() {
 //
     if (difference < 0.0) {
         acDistance = 0.3;
+    }
+
+    if (z == 1) {
+        acDistance = 1;
     }
 
     vec4 cameraColorVal = texture(cameraColor, Texcoord);

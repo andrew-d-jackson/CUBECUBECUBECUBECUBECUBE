@@ -1,9 +1,10 @@
 extern crate glium;
 extern crate rand;
 extern crate specs;
+extern crate image;
 extern crate nalgebra_glm as glm;
 use std::io::BufReader;
-use obj::Obj;
+use tobj::{load_obj};
 use std::fs::File;
 use glium::index::PrimitiveType;
 
@@ -39,8 +40,9 @@ fn create_window(event_loop: &EventLoop<()>) -> Display {
     Display::new(wb, cb, event_loop).unwrap()
 }
 
-fn load_object(filename: String) -> Obj {
-    Obj::load(filename).unwrap()
+fn load_object(filename: String) -> (Vec<tobj::Model>, Vec<tobj::Material>) {
+    let mut o = load_obj(filename, true).unwrap();
+    o
 }
 
 pub enum Action {
@@ -88,16 +90,15 @@ pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F)->! where F: 'st
     })
 }
 fn main() {
-
-
     let event_loop = EventLoop::new();
     let display = create_window(&event_loop);
     let (width, height) = display.get_framebuffer_dimensions();
 
-    let pizza_obj = load_object("./objs/TheRock2.obj".to_string());
-  /*  let cube_obj = load_object("./objs/cube.obj".to_string());
+    let the_rock = TexturedModel::new("./objs/TheRock2.obj".to_string(), &display);
+    let (pizza_obj, pizza_mats) = load_object("./objs/TheRock2.obj".to_string());
+    let (cube_obj, cube_mats) = load_object("./objs/cube.obj".to_string());
     let map = vxl::load_map("./maps/CityOfChicago.vxl".to_string(), (512, 512, 512));
-    let (vertexes, indices) = map::create_buffers(map, cube_obj);
+    let (vertexes, indices) = map::create_buffers(map, cube_obj[0].mesh.clone());
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
     let index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
 
@@ -110,6 +111,7 @@ fn main() {
     shaders.create_program(&display, "ocean".to_string());
     shaders.create_program(&display, "light".to_string());
     shaders.create_program(&display, "cube_pos".to_string());
+    shaders.create_program(&display, "texture".to_string());
 
 
     let mut writable_textures = WritableTextures::new();
@@ -124,7 +126,7 @@ fn main() {
     let mut world = World::new();
     world.register::<Position>();
     world.register::<Model>();
-    world.register::<Rotation>();
+    world.register::<TexturedModel>();
     world.register::<FlyingControls>();
     world.register::<Light>();
 
@@ -141,19 +143,25 @@ fn main() {
     world.insert(shaders);
 
     world.create_entity()
-        .with(Position { x: 0.0f32, y: 0.0, z: 0.0 })
+        .with(Position::new())
         .with(Model { 
             vertex_buffer: Arc::new(Mutex::new(VertexBufferAny::from(vertex_buffer))),
             index_buffer: Arc::new(Mutex::new(index_buffer)),
          })
-         .with(Rotation::new())
          .build();
         
-    
     world.create_entity()
-        .with(Position { x: 0.0f32, y: 0.0, z: 0.0 })
+        .with(
+            Position::new_pos(256.0f32, 380.0, 256.0)
+                .scale(0.1, 0.1, 0.1)
+                .rotate(0.1, 0.4, 0.3)
+        )
+        .with(the_rock)
+        .build();
+        
+    world.create_entity()
+        .with(Position::new_pos(256.0f32, 356.0, 256.0 ))
         .with(FlyingControls {})
-        .with(Rotation::new())
         .build();
 
     let mut dispatcher = DispatcherBuilder::new()
@@ -197,5 +205,5 @@ fn main() {
         } else {
             Action::Continue
         }
-    });*/
+    });
 }

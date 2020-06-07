@@ -1,5 +1,5 @@
 use crate::resources::{Inputs, WindowInfo};
-use crate::components::{Rotation, Position, FlyingControls};
+use crate::components::{Position, FlyingControls};
 use specs::{System, WriteStorage};
 use specs::prelude::*;
 use glium::glutin::event::VirtualKeyCode;
@@ -7,21 +7,21 @@ use glium::glutin::event::VirtualKeyCode;
 pub struct FlyingControlsSystem {}
 
 impl<'a> System<'a> for FlyingControlsSystem {
-    type SystemData = (Read<'a, Inputs>, Read<'a, WindowInfo>, WriteStorage<'a, Position>, WriteStorage<'a, Rotation>, ReadStorage<'a, FlyingControls>);
+    type SystemData = (Read<'a, Inputs>, Read<'a, WindowInfo>, WriteStorage<'a, Position>, ReadStorage<'a, FlyingControls>);
 
-    fn run(&mut self, (inputs, window_info, mut position, mut rotation, flying_controls): Self::SystemData) {    
+    fn run(&mut self, (inputs, window_info, mut position, flying_controls): Self::SystemData) {    
 
         let dt = window_info.delta_time;
         let rot_mul = 3.0f32;
         let mov_mul = 200.0f32;
 
-        for (posistion, rotation, _) in (&mut position, &mut rotation, &flying_controls).join() {
+        for (posistion, _) in (&mut position, &flying_controls).join() {
             let forward_vector = glm::quat_rotate_vec3(
-                 &rotation.to_quaternion(), &glm::vec3(0.0f32, 0.0, 1.0),
+                 &posistion.get_rot_as_quat(), &glm::vec3(0.0f32, 0.0, 1.0),
             );
 
             let right_vector = glm::quat_rotate_vec3(
-                 &rotation.to_quaternion(), &glm::vec3(1.0f32, 0.0, 0.0),
+                 &posistion.get_rot_as_quat(), &glm::vec3(1.0f32, 0.0, 0.0),
             );
 
             if inputs.is_pressed(VirtualKeyCode::W) {
@@ -48,8 +48,8 @@ impl<'a> System<'a> for FlyingControlsSystem {
                 posistion.z = posistion.z - (right_vector.z * dt * mov_mul);
             }
 
-            rotation.yaw = rotation.yaw + (inputs.mouse_movement_x * dt * rot_mul);
-            rotation.pitch = (rotation.pitch - (inputs.mouse_movement_y * dt * rot_mul)).max(-1.5).min(1.5);
+            posistion.yaw = posistion.yaw - (inputs.mouse_movement_x * dt * rot_mul);
+            posistion.pitch = (posistion.pitch + (inputs.mouse_movement_y * dt * rot_mul)).max(-1.5).min(1.5);
         }
     }
 }

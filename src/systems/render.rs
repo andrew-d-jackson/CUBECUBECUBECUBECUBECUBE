@@ -1,5 +1,5 @@
 use crate::resources::{Shaders, WindowInfo, WritableTextures, ActiveTexture};
-use crate::components::{Model, Position, FlyingControls, Rotation, Light};
+use crate::components::{Model, Position, FlyingControls, Light, TexturedModel};
 use specs::{Write, Read, System, WriteStorage};
 use specs::prelude::*;
 use glium::DrawParameters;
@@ -21,8 +21,8 @@ impl<'a> System<'a> for RenderSystem {
         Write<'a, WritableTextures>,
         WriteStorage<'a, Model>,
         WriteStorage<'a, Position>,
-        WriteStorage<'a, Rotation>,
         ReadStorage<'a, FlyingControls>,
+        ReadStorage<'a, TexturedModel>,
         ReadStorage<'a, Light>,
         Read<'a, ActiveTexture>
     );
@@ -35,8 +35,8 @@ impl<'a> System<'a> for RenderSystem {
             mut writable_textures,
             mut models,
             mut positions,
-            mut rotations,
             flying_controls,
+            textured_model,
             light,
             active_texture
         ): Self::SystemData
@@ -54,10 +54,10 @@ impl<'a> System<'a> for RenderSystem {
         );
 
 
-        for (position, rotation, flying_controls) in (&mut positions, &mut rotations, &flying_controls).join() {
-            camera_position = glm::vec3(position.x, position.y, position.z);
+        for (position, flying_controls) in (&mut positions, &flying_controls).join() {
+            camera_position = position.get_pos_vec();
             camera_direction = glm::quat_rotate_vec3(
-                &rotation.to_quaternion(), &glm::vec3(0.0f32, 0.0, 1.0),
+                &position.get_rot_as_quat(), &glm::vec3(0.0f32, 0.0, 1.0),
             );
         }
 
@@ -72,16 +72,16 @@ impl<'a> System<'a> for RenderSystem {
         );
         let camera_matrix: &[[f32; 4]; 4] = camera.as_ref();
 
-        let projection_matrix = glm::perspective(width as f32 / height as f32, 55f32, 0.01f32, 600f32);
+        let projection_matrix = glm::perspective(width as f32 / height as f32, 1.5708f32, 0.01f32, 600f32);
         let projection = projection_matrix.as_ref();
 
         let sun_projection = glm::ortho(-50f32, 50.0, -50.0, 50.0, 0.01, 400.0);
         let sun_projection_matrix = sun_projection.as_ref();
 
-        let sun_distant_projection = glm::ortho(-550f32, 550.0, -550.0, 550.0, 0.01, 400.0);
+        let sun_distant_projection = glm::ortho(-350f32, 350.0, -350.0, 350.0, 0.01, 400.0);
         let sun_distant_projection_matrix = sun_distant_projection.as_ref();
 
-        let sun_position = &camera_position + glm::vec3(100.0f32, -200.0, 100.0);
+        let sun_position = &camera_position + glm::vec3(100.0f32, 200.0, 100.0);
         let sun_look = glm::look_at(
             &sun_position, &camera_position, &up_vector,
         );
@@ -150,6 +150,24 @@ impl<'a> System<'a> for RenderSystem {
                     &sun_parameters
                 ).unwrap();
             }
+            
+            for (position, model) in (&positions, &textured_model).join() {
+                let translation = position.get_transform_matrix();
+                let models = model.models.lock().unwrap();
+                for individual_model in models.iter() {
+                    sun_depth_buffer.draw(
+                        &individual_model.vertex_buffer,
+                        &individual_model.index_buffer,
+                        &shaders.get("cube_depth".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *sun_camera_matrix,
+                            projection: *sun_projection_matrix,
+                        },
+                        &draw_parameters
+                    ).unwrap();
+                }
+            }
                 
             sun_distant_depth_buffer.clear_color(1.0, 1.0, 1.0, 1.0);
             sun_distant_depth_buffer.clear_depth(1.0);
@@ -169,6 +187,24 @@ impl<'a> System<'a> for RenderSystem {
                     },
                     &sun_parameters
                 ).unwrap();
+            }
+            
+            for (position, model) in (&positions, &textured_model).join() {
+                let translation = position.get_transform_matrix();
+                let models = model.models.lock().unwrap();
+                for individual_model in models.iter() {
+                    sun_distant_depth_buffer.draw(
+                        &individual_model.vertex_buffer,
+                        &individual_model.index_buffer,
+                        &shaders.get("cube_depth".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *sun_camera_matrix,
+                            projection: *sun_distant_projection_matrix,
+                        },
+                        &draw_parameters
+                    ).unwrap();
+                }
             }
 
             camera_buffer.clear_color_and_depth((0.0f32, 0.3, 1.0, 0.0), 1.0);
@@ -190,6 +226,26 @@ impl<'a> System<'a> for RenderSystem {
                 ).unwrap();
             }
 
+            for (position, model) in (&positions, &textured_model).join() {
+                let translation = position.get_transform_matrix();
+                let models = model.models.lock().unwrap();
+                for individual_model in models.iter() {
+                    camera_buffer.draw(
+                        &individual_model.vertex_buffer,
+                        &individual_model.index_buffer,
+                        &shaders.get("texture".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *camera_matrix,
+                            projection: *projection,
+                            diffuse_textrue: glium::uniforms::Sampler::new(&individual_model.texture),
+                        },
+                        &draw_parameters
+                    ).unwrap();
+                }
+            }
+
+
             camera_normal_buffer.clear_color_and_depth((0.0f32, 0.3, 1.0, 0.0), 1.0);
             for (position, model) in (&positions, &models).join() {
                 let vertex_buffer = &*model.vertex_buffer.lock().unwrap();
@@ -207,6 +263,24 @@ impl<'a> System<'a> for RenderSystem {
                     },
                     &draw_parameters
                 ).unwrap();
+            }
+
+            for (position, model) in (&positions, &textured_model).join() {
+                let translation = position.get_transform_matrix();
+                let models = model.models.lock().unwrap();
+                for individual_model in models.iter() {
+                    camera_normal_buffer.draw(
+                        &individual_model.vertex_buffer,
+                        &individual_model.index_buffer,
+                        &shaders.get("cube_normal".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *camera_matrix,
+                            projection: *projection,
+                        },
+                        &draw_parameters
+                    ).unwrap();
+                }
             }
 
 
@@ -234,11 +308,11 @@ impl<'a> System<'a> for RenderSystem {
 
             let light_projection_matrix = glm::ortho(-50f32, 50.0, -50.0, 50.0, 0.01, 300.0);
 
-            for (light_pos, light_rot, light) in (&positions, &rotations, &light).join() {
+            for (light_pos, light) in (&positions, &light).join() {
 
                 let light_position = glm::vec3(light_pos.x, light_pos.y, light_pos.z);
                 let light_direction = glm::quat_rotate_vec3(
-                    &light_rot.to_quaternion(), &glm::vec3(0.0f32, 0.0, 1.0),
+                    &light_pos.get_rot_as_quat(), &glm::vec3(0.0f32, 0.0, 1.0),
                 );
                 let light_look = glm::look_at(
                     &light_position, &(light_position + light_direction), &up_vector,

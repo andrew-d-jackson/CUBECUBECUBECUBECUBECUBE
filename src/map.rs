@@ -1,4 +1,4 @@
-use obj::Obj;
+use tobj::Mesh;
 use glium::implement_vertex;
 
 #[derive(Clone, Debug)]
@@ -41,8 +41,8 @@ pub fn create_ocean_buffer() -> (Vec<OceanVertex>, Vec<u32>) {
         ]
     )
 }
-/*
-pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<MyVertex>, Vec<u32>) {
+
+pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Mesh) -> (Vec<MyVertex>, Vec<u32>) {
     let mut indices: Vec<u32> = vec![];
     let mut vertexes: Vec<MyVertex> = vec![];
 
@@ -52,21 +52,28 @@ pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<
                 match &map_data[x as usize][y as usize][z as usize] {
                     None => (),
                     Some(color) => {
-                        let vertexes_for_block = obj.vertices.iter().map(|v| {
-                            MyVertex {
-                                position: [
-                                    v.position[0] + x as f32,
-                                    v.position[1] + z as f32,
-                                    v.position[2] + y as f32,
-                                ],
-                                normal: v.normal,
-                                color: [
-                                    color.r as u8,
-                                    color.g as u8,
-                                    color.b as u8,
-                                ],
-                            }
-                        }).collect::<Vec<MyVertex>>();
+                        let mut vertexes_for_block: Vec<MyVertex> = vec![];
+                        for i in 0..obj.positions.len()/3 {
+                            vertexes_for_block.push(
+                                MyVertex {
+                                    position: [
+                                        obj.positions[i * 3] + x as f32,
+                                        obj.positions[i * 3 + 1] + 512.0 - z as f32,
+                                        obj.positions[i * 3 + 2] + y as f32,
+                                    ],
+                                    normal: [
+                                        obj.normals[i * 3] as f32,
+                                        obj.normals[i * 3 + 1] as f32,
+                                        obj.normals[i * 3 + 2] as f32,
+                                    ],
+                                    color: [
+                                        color.r as u8,
+                                        color.g as u8,
+                                        color.b as u8,
+                                    ],
+                                }
+                            );
+                        }
 
                         for i in obj.indices.iter() {
                             indices.push(vertexes.len() as u32 + *i as u32);
@@ -81,4 +88,4 @@ pub fn create_buffers(map_data: Vec<Vec<Vec<Option<Color>>>>, obj: Obj) -> (Vec<
     }
 
     (vertexes, indices)
-}*/
+}

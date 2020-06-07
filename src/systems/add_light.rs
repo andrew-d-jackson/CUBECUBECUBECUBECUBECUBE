@@ -1,5 +1,5 @@
 use crate::resources::{Shaders, WindowInfo, Inputs};
-use crate::components::{Model, Position, FlyingControls, Rotation, Light};
+use crate::components::{Model, Position, FlyingControls, Light};
 use specs::{Read, System, ReadStorage, Entities};
 use specs::prelude::*;
 use glium::DrawParameters;
@@ -17,15 +17,13 @@ use rand::Rng;
 pub struct AddLightSystem {}
 
 impl<'a> System<'a> for AddLightSystem {
-    type SystemData = (Entities<'a>, Read<'a, Inputs>, WriteStorage<'a, Position>, WriteStorage<'a, Rotation>, WriteStorage<'a, Light>, ReadStorage<'a, FlyingControls>);
+    type SystemData = (Entities<'a>, Read<'a, Inputs>, WriteStorage<'a, Position>, WriteStorage<'a, Light>, ReadStorage<'a, FlyingControls>);
 
-    fn run(&mut self, (mut entities, inputs, mut position, mut rotation,mut  light, flying_controls): Self::SystemData) {    
+    fn run(&mut self, (mut entities, inputs, mut position, mut light, flying_controls): Self::SystemData) {    
         if inputs.was_pressed(VirtualKeyCode::L) {
-            let mut camera_direction = Rotation::default();
             let mut camera_position = Position::default();
-            for (position, rotation, flying_controls) in (&position, &rotation, &flying_controls).join() {
+            for (position, flying_controls) in (&position, &flying_controls).join() {
                 camera_position = position.clone();
-                camera_direction = rotation.clone();
             }
 
             let mut rand = rand::thread_rng();
@@ -33,7 +31,6 @@ impl<'a> System<'a> for AddLightSystem {
             let strength = rand.gen_range(0.0f32, 1.0);
 
             entities.build_entity()
-                .with(camera_direction.clone(), &mut rotation)
                 .with(camera_position.clone(), &mut position)
                 .with(Light { strength, color }, &mut light)
                 .build();
