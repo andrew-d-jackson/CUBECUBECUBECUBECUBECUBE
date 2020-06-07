@@ -21,3 +21,6 @@ pub use resize_textures::*;
 
 pub mod rotate_randomly;
 pub use rotate_randomly::*;
+
+pub mod fps_controls;
+pub use fps_controls::*;

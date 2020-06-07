@@ -97,8 +97,8 @@ fn main() {
     let the_rock = TexturedModel::new("./objs/TheRock2.obj".to_string(), &display);
     let (pizza_obj, pizza_mats) = load_object("./objs/TheRock2.obj".to_string());
     let (cube_obj, cube_mats) = load_object("./objs/cube.obj".to_string());
-    let map = vxl::load_map("./maps/CityOfChicago.vxl".to_string(), (512, 512, 512));
-    let (vertexes, indices) = map::create_buffers(map, cube_obj[0].mesh.clone());
+    let map = vxl::load_map("./maps/London.vxl".to_string(), (512, 512, 512));
+    let (vertexes, indices) = map::create_buffers(map.clone(), cube_obj[0].mesh.clone());
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
     let index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
 
@@ -162,13 +162,13 @@ fn main() {
         .build();
         
     world.create_entity()
-        .with(Position::new_pos(256.0f32, 356.0, 256.0 ))
+        .with(Position::new_pos(256.0f32, 510.0, 256.0 ))
         .with(FlyingControls {})
         .build();
 
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(UpdateWindowSystem::new())
-        .with_thread_local(FlyingControlsSystem {})
+        .with_thread_local(FPSSystem { map: map, velocity: glm::vec3(0.0f32, 0.0, 0.0) })
         .with_thread_local(RotateRandomlySystem {})
         .with_thread_local(SwitchActiveTextureSystem {})
         .with_thread_local(ReloadShadersSystem {})
