@@ -12,3 +12,6 @@ pub use light::*;
 
 pub mod textured_model;
 pub use textured_model::*;
+
+pub mod rotate_randomly;
+pub use rotate_randomly::*;

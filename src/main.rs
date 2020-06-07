@@ -129,6 +129,7 @@ fn main() {
     world.register::<TexturedModel>();
     world.register::<FlyingControls>();
     world.register::<Light>();
+    world.register::<RotateRandomly>();
 
     world.insert(Inputs::new());
     world.insert(ActiveTexture { active_texture: "composed".to_string(), depth: false });
@@ -157,6 +158,7 @@ fn main() {
                 .rotate(0.1, 0.4, 0.3)
         )
         .with(the_rock)
+        .with(RotateRandomly {})
         .build();
         
     world.create_entity()
@@ -167,6 +169,7 @@ fn main() {
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(UpdateWindowSystem::new())
         .with_thread_local(FlyingControlsSystem {})
+        .with_thread_local(RotateRandomlySystem {})
         .with_thread_local(SwitchActiveTextureSystem {})
         .with_thread_local(ReloadShadersSystem {})
         .with_thread_local(ResizeTexturesSystem {})
