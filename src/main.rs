@@ -1,33 +1,30 @@
 extern crate glium;
-extern crate rand;
-extern crate specs;
 extern crate image;
 extern crate nalgebra_glm as glm;
-use std::io::BufReader;
-use tobj::{load_obj};
-use std::fs::File;
+extern crate rand;
+extern crate specs;
 use glium::index::PrimitiveType;
+use tobj::load_obj;
 
 use std::sync::{Arc, Mutex};
 
-use glium::{Display, VertexBuffer, IndexBuffer};
+use glium::glutin::event::{Event, StartCause, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
-use glium::glutin::event::{Event, WindowEvent, StartCause};
 use glium::vertex::VertexBufferAny;
-use std::time::{Instant, Duration};
+use glium::{Display, IndexBuffer, VertexBuffer};
 use specs::prelude::*;
-
+use std::time::{Duration, Instant};
 
 mod cube;
-mod shader;
-mod vxl;
-mod map;
 mod input;
-mod quad;
+mod map;
 mod misc;
+mod quad;
+mod shader;
 mod systems;
+mod vxl;
 use systems::*;
 mod components;
 use components::*;
@@ -41,8 +38,7 @@ fn create_window(event_loop: &EventLoop<()>) -> Display {
 }
 
 fn load_object(filename: String) -> (Vec<tobj::Model>, Vec<tobj::Material>) {
-    let mut o = load_obj(filename, true).unwrap();
-    o
+    load_obj(filename, true).unwrap()
 }
 
 pub enum Action {
@@ -50,26 +46,23 @@ pub enum Action {
     Continue,
 }
 
-pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F)->! where F: 'static + FnMut(&Vec<Event<()>>) -> Action {
+pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F) -> !
+where
+    F: 'static + FnMut(&Vec<Event<()>>) -> Action,
+{
     let mut events_buffer = Vec::new();
     let mut next_frame_time = Instant::now();
     event_loop.run(move |event, _, control_flow| {
         let run_callback = match event.to_static() {
-            Some(Event::NewEvents(cause)) => {
-                match cause {
-                    StartCause::ResumeTimeReached { .. } | StartCause::Init => {
-                        true
-                    },
-                    _ => false
-                }
+            Some(Event::NewEvents(cause)) => match cause {
+                StartCause::ResumeTimeReached { .. } | StartCause::Init => true,
+                _ => false,
             },
             Some(event) => {
                 events_buffer.push(event);
                 false
             }
-            None => {
-                false
-            },
+            None => false,
         };
 
         let action = if run_callback {
@@ -84,8 +77,8 @@ pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F)->! where F: 'st
         match action {
             Action::Continue => {
                 *control_flow = ControlFlow::WaitUntil(next_frame_time);
-            },
-            Action::Stop => *control_flow = ControlFlow::Exit
+            }
+            Action::Stop => *control_flow = ControlFlow::Exit,
         }
     })
 }
@@ -95,12 +88,12 @@ fn main() {
     let (width, height) = display.get_framebuffer_dimensions();
 
     let the_rock = TexturedModel::new("./objs/TheRock2.obj".to_string(), &display);
-    let (pizza_obj, pizza_mats) = load_object("./objs/TheRock2.obj".to_string());
-    let (cube_obj, cube_mats) = load_object("./objs/cube.obj".to_string());
+    let (cube_obj, _) = load_object("./objs/cube.obj".to_string());
     let map = vxl::load_map("./maps/London.vxl".to_string(), (512, 512, 512));
     let (vertexes, indices) = map::create_buffers(map.clone(), cube_obj[0].mesh.clone());
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
-    let index_buffer = IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
+    let index_buffer =
+        IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
 
     let mut shaders = Shaders::new();
     shaders.create_program(&display, "cube_color".to_string());
@@ -112,7 +105,6 @@ fn main() {
     shaders.create_program(&display, "light".to_string());
     shaders.create_program(&display, "cube_pos".to_string());
     shaders.create_program(&display, "texture".to_string());
-
 
     let mut writable_textures = WritableTextures::new();
     writable_textures.insert("camera".to_string(), &display);
@@ -132,43 +124,52 @@ fn main() {
     world.register::<RotateRandomly>();
 
     world.insert(Inputs::new());
-    world.insert(ActiveTexture { active_texture: "composed".to_string(), depth: false });
+    world.insert(ActiveTexture {
+        active_texture: "composed".to_string(),
+        depth: false,
+    });
     world.insert(WindowInfo {
         display: Option::Some(Arc::new(Mutex::new(display))),
         width: width,
         height: height,
         delta_time: 0.0,
-        resized: false
+        resized: false,
     });
     world.insert(writable_textures);
     world.insert(shaders);
 
-    world.create_entity()
+    world
+        .create_entity()
         .with(Position::new())
-        .with(Model { 
+        .with(Model {
             vertex_buffer: Arc::new(Mutex::new(VertexBufferAny::from(vertex_buffer))),
             index_buffer: Arc::new(Mutex::new(index_buffer)),
-         })
-         .build();
-        
-    world.create_entity()
+        })
+        .build();
+
+    world
+        .create_entity()
         .with(
             Position::new_pos(256.0f32, 380.0, 256.0)
                 .scale(0.1, 0.1, 0.1)
-                .rotate(0.1, 0.4, 0.3)
+                .rotate(0.1, 0.4, 0.3),
         )
         .with(the_rock)
         .with(RotateRandomly {})
         .build();
-        
-    world.create_entity()
-        .with(Position::new_pos(256.0f32, 510.0, 256.0 ))
+
+    world
+        .create_entity()
+        .with(Position::new_pos(256.0f32, 510.0, 256.0))
         .with(FlyingControls {})
         .build();
 
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(UpdateWindowSystem::new())
-        .with_thread_local(FPSSystem { map: map, velocity: glm::vec3(0.0f32, 0.0, 0.0) })
+        .with_thread_local(FPSSystem {
+            map: map,
+            velocity: glm::vec3(0.0f32, 0.0, 0.0),
+        })
         .with_thread_local(RotateRandomlySystem {})
         .with_thread_local(SwitchActiveTextureSystem {})
         .with_thread_local(ReloadShadersSystem {})
@@ -184,7 +185,7 @@ fn main() {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::CloseRequested => {
                         should_close = true;
-                    },
+                    }
                     _ => (),
                 },
                 Event::NewEvents(cause) => match cause {

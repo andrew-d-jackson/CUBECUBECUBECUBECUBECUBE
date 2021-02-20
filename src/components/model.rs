@@ -1,7 +1,7 @@
-use std::sync::{Mutex, Arc};
-use specs::{VecStorage, Component};
-use glium::{IndexBuffer};
-use glium::vertex::{VertexBufferAny};
+use glium::vertex::VertexBufferAny;
+use glium::IndexBuffer;
+use specs::{Component, VecStorage};
+use std::sync::{Arc, Mutex};
 
 pub struct Model {
     pub vertex_buffer: Arc<Mutex<VertexBufferAny>>,

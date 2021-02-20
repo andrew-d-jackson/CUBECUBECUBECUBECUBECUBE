@@ -1,9 +1,9 @@
-use crate::resources::{Inputs, WindowInfo};
-use crate::components::{Position, FlyingControls};
-use specs::{System, WriteStorage};
-use specs::prelude::*;
-use glium::glutin::event::VirtualKeyCode;
+use crate::components::{FlyingControls, Position};
 use crate::map::Color;
+use crate::resources::{Inputs, WindowInfo};
+use glium::glutin::event::VirtualKeyCode;
+use specs::prelude::*;
+use specs::{System, WriteStorage};
 
 pub struct FPSSystem {
     pub map: Vec<Vec<Vec<Option<Color>>>>,
@@ -28,29 +28,31 @@ impl FPSSystem {
         points.push(point + glm::vec3(0.0f32, -1.0, 0.0));
         points.push(point + glm::vec3(0.0f32, -2.0, 0.0));
         points.push(point + glm::vec3(0.0f32, -3.0, 0.0));
-        points.iter().any(|p| self.is_point_blocked(*p))        
+        points.iter().any(|p| self.is_point_blocked(*p))
     }
 }
 
 impl<'a> System<'a> for FPSSystem {
-    type SystemData = (Read<'a, Inputs>, Read<'a, WindowInfo>, WriteStorage<'a, Position>, ReadStorage<'a, FlyingControls>);
+    type SystemData = (
+        Read<'a, Inputs>,
+        Read<'a, WindowInfo>,
+        WriteStorage<'a, Position>,
+        ReadStorage<'a, FlyingControls>,
+    );
 
-    fn run(&mut self, (inputs, window_info, mut position, flying_controls): Self::SystemData) {    
-
+    fn run(&mut self, (inputs, window_info, mut position, flying_controls): Self::SystemData) {
         let dt = window_info.delta_time;
         let rot_mul = 3.0f32;
         let mov_mul = 20.0f32;
 
         for (posistion, _) in (&mut position, &flying_controls).join() {
-            let mut forward_vector = glm::quat_rotate_vec3(
-                 &posistion.get_rot_as_quat(), &glm::vec3(0.0f32, 0.0, 1.0),
-            );
+            let mut forward_vector =
+                glm::quat_rotate_vec3(&posistion.get_rot_as_quat(), &glm::vec3(0.0f32, 0.0, 1.0));
             forward_vector.y = 0.0f32;
             forward_vector = glm::normalize(&forward_vector);
 
-            let right_vector = glm::quat_rotate_vec3(
-                 &posistion.get_rot_as_quat(), &glm::vec3(1.0f32, 0.0, 0.0),
-            );
+            let right_vector =
+                glm::quat_rotate_vec3(&posistion.get_rot_as_quat(), &glm::vec3(1.0f32, 0.0, 0.0));
 
             self.velocity.x = 0.0;
             self.velocity.z = 0.0;
@@ -64,7 +66,7 @@ impl<'a> System<'a> for FPSSystem {
                 self.velocity.x = self.velocity.x - (forward_vector.x * dt * mov_mul);
                 self.velocity.z = self.velocity.z - (forward_vector.z * dt * mov_mul);
             }
-            
+
             if inputs.is_pressed(VirtualKeyCode::D) {
                 self.velocity.x = self.velocity.x + (right_vector.x * dt * mov_mul);
                 self.velocity.z = self.velocity.z + (right_vector.z * dt * mov_mul);
@@ -75,7 +77,6 @@ impl<'a> System<'a> for FPSSystem {
                 self.velocity.z = self.velocity.z - (right_vector.z * dt * mov_mul);
             }
 
-
             if inputs.is_pressed(VirtualKeyCode::A) {
                 self.velocity.x = self.velocity.x - (right_vector.x * dt * mov_mul);
                 self.velocity.z = self.velocity.z - (right_vector.z * dt * mov_mul);
@@ -85,7 +86,6 @@ impl<'a> System<'a> for FPSSystem {
                 self.velocity.y = self.velocity.y + (1.0);
             }
 
-
             self.velocity.y = self.velocity.y - (dt * 2.0);
             if self.velocity.y >= 0.99f32 {
                 self.velocity.y = 0.99
@@ -93,7 +93,7 @@ impl<'a> System<'a> for FPSSystem {
             if self.velocity.y <= -0.99f32 {
                 self.velocity.y = -0.99
             }
-            println!("{}" , self.velocity.y);
+            println!("{}", self.velocity.y);
             let mut new_position = posistion.get_pos_vec();
             let mut test = new_position + glm::vec3(self.velocity.x, 0.0, 0.0);
             if !self.is_points_blocked(test) {
@@ -116,7 +116,9 @@ impl<'a> System<'a> for FPSSystem {
             posistion.z = new_position.z;
 
             posistion.yaw = posistion.yaw - (inputs.mouse_movement_x * dt * rot_mul);
-            posistion.pitch = (posistion.pitch + (inputs.mouse_movement_y * dt * rot_mul)).max(-1.5).min(1.5);
+            posistion.pitch = (posistion.pitch + (inputs.mouse_movement_y * dt * rot_mul))
+                .max(-1.5)
+                .min(1.5);
         }
     }
 }

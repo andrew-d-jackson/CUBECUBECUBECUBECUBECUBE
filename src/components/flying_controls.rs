@@ -1,6 +1,6 @@
-use specs::{VecStorage, Component};
+use specs::{Component, VecStorage};
 
-pub struct FlyingControls { }
+pub struct FlyingControls {}
 
 impl Component for FlyingControls {
     type Storage = VecStorage<Self>;

@@ -1,6 +1,6 @@
-use specs::{VecStorage, Component};
+use specs::{Component, VecStorage};
 
-pub struct RotateRandomly { }
+pub struct RotateRandomly {}
 
 impl Component for RotateRandomly {
     type Storage = VecStorage<Self>;

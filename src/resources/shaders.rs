@@ -1,8 +1,8 @@
-use glium::{Program, Display, ProgramCreationError};
+use glium::{Display, Program, ProgramCreationError};
+use std::collections::HashMap;
+use std::fs::File;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
-use std::fs::File;
-use std::collections::HashMap;
 
 pub fn load_shader_string(filename: String) -> String {
     let mut f = File::open(filename).unwrap();
@@ -11,8 +11,17 @@ pub fn load_shader_string(filename: String) -> String {
     ret
 }
 
-pub fn create_program(display: &Display, vertex_shader: String, fragment_shader: String) -> Result<Program, ProgramCreationError> {
-    Program::from_source(display, vertex_shader.as_ref(), fragment_shader.as_ref(), None)
+pub fn create_program(
+    display: &Display,
+    vertex_shader: String,
+    fragment_shader: String,
+) -> Result<Program, ProgramCreationError> {
+    Program::from_source(
+        display,
+        vertex_shader.as_ref(),
+        fragment_shader.as_ref(),
+        None,
+    )
 }
 
 #[derive(Clone, Default)]
@@ -32,13 +41,19 @@ impl Shaders {
         );
 
         match result {
-            Ok(program) => { self.programs.insert(name, Arc::new(Mutex::new(program))); }
-            Err(err) => { println!("{}", err); }
+            Ok(program) => {
+                self.programs.insert(name, Arc::new(Mutex::new(program)));
+            }
+            Err(err) => {
+                println!("{}", err);
+            }
         };
     }
 
     pub fn new() -> Shaders {
-        Shaders { programs: HashMap::default() }
+        Shaders {
+            programs: HashMap::default(),
+        }
     }
 
     pub fn get(&mut self, name: String) -> Arc<Mutex<Program>> {
@@ -47,6 +62,7 @@ impl Shaders {
 
     pub fn reload_all(&mut self, display: &Display) -> () {
         let keys: Vec<String> = self.programs.keys().map(|k| k.clone()).collect();
-        keys.into_iter().for_each(|key| self.create_program(display, key));
+        keys.into_iter()
+            .for_each(|key| self.create_program(display, key));
     }
 }

@@ -1,4 +1,4 @@
-use glium::glutin::event::{VirtualKeyCode, ElementState, KeyboardInput};
+use glium::glutin::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 #[derive(Default, Clone, Debug)]
 pub struct KeyboardState {
@@ -46,9 +46,10 @@ impl KeyboardState {
                     self.keys_down.push(key);
                     self.keys_pressed.push(key);
                 }
-            },
+            }
             ElementState::Released => {
-                self.keys_down = self.keys_down
+                self.keys_down = self
+                    .keys_down
                     .iter()
                     .filter(|k| **k != key)
                     .cloned()
@@ -59,4 +60,3 @@ impl KeyboardState {
         }
     }
 }
-

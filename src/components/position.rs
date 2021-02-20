@@ -1,4 +1,4 @@
-use specs::{VecStorage, Component};
+use specs::{Component, VecStorage};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
@@ -10,9 +10,9 @@ pub struct Position {
     pub pitch: f32,
     pub roll: f32,
 
-    pub scaleX: f32,
-    pub scaleY: f32,
-    pub scaleZ: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub scale_z: f32,
 }
 
 impl Component for Position {
@@ -33,9 +33,9 @@ impl Default for Position {
             roll: angles.x,
             pitch: angles.y,
             yaw: angles.z,
-            scaleX: 1.0,
-            scaleY: 1.0,
-            scaleZ: 1.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            scale_z: 1.0,
         }
     }
 }
@@ -54,12 +54,12 @@ impl Position {
             roll: angles.x,
             pitch: angles.y,
             yaw: angles.z,
-            scaleX: 1.0,
-            scaleY: 1.0,
-            scaleZ: 1.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            scale_z: 1.0,
         }
     }
-    
+
     pub fn new_pos(x: f32, y: f32, z: f32) -> Self {
         let forward = glm::vec3(0.0f32, 0.0, 1.0);
         let up = glm::vec3(0.0f32, 1.0, 0.0);
@@ -73,23 +73,22 @@ impl Position {
             roll: angles.x,
             pitch: angles.y,
             yaw: angles.z,
-            scaleX: 1.0,
-            scaleY: 1.0,
-            scaleZ: 1.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            scale_z: 1.0,
         }
     }
-
 
     pub fn get_pos_vec(&self) -> glm::Vec3 {
         glm::vec3(self.x, self.y, self.z)
     }
 
     pub fn get_scale_vec(&self) -> glm::Vec3 {
-        glm::vec3(self.scaleX, self.scaleY, self.scaleZ)
+        glm::vec3(self.scale_x, self.scale_y, self.scale_z)
     }
 
     pub fn get_rot_as_quat(&self) -> glm::Quat {
-        let yaw = glm::quat_angle_axis( self.yaw, &glm::vec3(0.0f32, 1.0, 0.0));
+        let yaw = glm::quat_angle_axis(self.yaw, &glm::vec3(0.0f32, 1.0, 0.0));
         let pitch = glm::quat_angle_axis(self.pitch, &glm::vec3(1.0f32, 0.0, 0.0));
         let roll = glm::quat_angle_axis(self.roll, &glm::vec3(0.0f32, 0.0, 1.0));
         yaw * pitch * roll
@@ -98,22 +97,24 @@ impl Position {
     pub fn get_transform_matrix(&self) -> glm::TMat<f32, glm::U4, glm::U4> {
         let model_mat: glm::TMat<f32, glm::U4, glm::U4> = glm::identity();
         let translated = glm::translate(&model_mat, &glm::vec3(self.x, self.y, self.z));
-        let scaled = glm::scale(&translated, &glm::vec3(self.scaleX, self.scaleY, self.scaleZ));
+        let scaled = glm::scale(
+            &translated,
+            &glm::vec3(self.scale_x, self.scale_y, self.scale_z),
+        );
         scaled * glm::quat_to_mat4(&self.get_rot_as_quat())
     }
 
-    pub fn scale(&mut self, scaleX: f32, scaleY: f32, scaleZ: f32) -> Self {
-        self.scaleX = scaleX;
-        self.scaleY = scaleY;
-        self.scaleZ = scaleZ;
+    pub fn scale(&mut self, scale_x: f32, scale_y: f32, scale_z: f32) -> Self {
+        self.scale_x = scale_x;
+        self.scale_y = scale_y;
+        self.scale_z = scale_z;
         *self
     }
-    
+
     pub fn rotate(&mut self, yaw: f32, pitch: f32, roll: f32) -> Self {
         self.yaw = yaw;
         self.pitch = pitch;
         self.roll = roll;
         *self
     }
-    
 }

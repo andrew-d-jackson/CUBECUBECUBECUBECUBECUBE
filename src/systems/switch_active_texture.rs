@@ -1,18 +1,28 @@
-use crate::resources::{Inputs, ActiveTexture, WritableTextures};
-use specs::{System};
-use specs::prelude::*;
+use crate::resources::{ActiveTexture, Inputs, WritableTextures};
 use glium::glutin::event::VirtualKeyCode;
+use specs::prelude::*;
+use specs::System;
 
 pub struct SwitchActiveTextureSystem {}
 
 impl<'a> System<'a> for SwitchActiveTextureSystem {
-    type SystemData = (Read<'a, Inputs>, Write<'a, ActiveTexture>, Read<'a, WritableTextures>);
+    type SystemData = (
+        Read<'a, Inputs>,
+        Write<'a, ActiveTexture>,
+        Read<'a, WritableTextures>,
+    );
 
-    fn run(&mut self, (inputs, mut active_texture, writable_textures): Self::SystemData) {    
-        
-        let mut texture_list: Vec<String> = writable_textures.color_textures.keys().map(|k| k.clone()).collect();
+    fn run(&mut self, (inputs, mut active_texture, writable_textures): Self::SystemData) {
+        let mut texture_list: Vec<String> = writable_textures
+            .color_textures
+            .keys()
+            .map(|k| k.clone())
+            .collect();
         texture_list.sort();
-        let index = texture_list.iter().position(|r| r.clone() == active_texture.active_texture.clone()).unwrap();
+        let index = texture_list
+            .iter()
+            .position(|r| r.clone() == active_texture.active_texture.clone())
+            .unwrap();
         let len = texture_list.len();
 
         if inputs.was_pressed(VirtualKeyCode::N) {

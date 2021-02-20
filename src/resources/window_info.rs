@@ -1,6 +1,6 @@
-use std::sync::{Arc, Mutex};
-use std::option::Option;
 use glium::Display;
+use std::option::Option;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Default)]
 pub struct WindowInfo {

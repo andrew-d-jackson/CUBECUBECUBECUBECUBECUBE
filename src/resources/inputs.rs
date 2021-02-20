@@ -1,4 +1,4 @@
-use glium::glutin::event::{WindowEvent, VirtualKeyCode, ElementState, KeyboardInput, Event};
+use glium::glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 
 #[derive(Default, Clone, Debug)]
 pub struct Inputs {
@@ -35,7 +35,7 @@ impl Inputs {
     pub fn was_released(&self, key: VirtualKeyCode) -> bool {
         self.keys_released.contains(&key)
     }
-    
+
     pub fn mouse_movement(&self) -> (f32, f32) {
         (self.mouse_movement_x, self.mouse_movement_y)
     }
@@ -58,9 +58,10 @@ impl Inputs {
                     self.keys_down.push(key);
                     self.keys_pressed.push(key);
                 }
-            },
+            }
             ElementState::Released => {
-                self.keys_down = self.keys_down
+                self.keys_down = self
+                    .keys_down
                     .iter()
                     .filter(|k| **k != key)
                     .cloned()
@@ -85,10 +86,10 @@ impl Inputs {
                         self.mouse_movement_y = position.y as f32 - self.mouse_y;
                         self.mouse_x = position.x as f32;
                         self.mouse_y = position.y as f32;
-                    },
+                    }
                     WindowEvent::KeyboardInput { input, .. } => {
                         self.process_keyboard_input(*input);
-                    },
+                    }
                     _ => (),
                 },
                 _ => (),
