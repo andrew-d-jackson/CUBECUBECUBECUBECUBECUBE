@@ -1,8 +1,8 @@
 use crate::components::{FlyingControls, Light, Position};
-use crate::resources::{Inputs};
+use crate::resources::Inputs;
 use glium::glutin::event::VirtualKeyCode;
 use rand::Rng;
-use specs::{Entities, Read, ReadStorage, System, Join, WriteStorage};
+use specs::{Entities, Join, Read, ReadStorage, System, WriteStorage};
 
 pub struct AddLightSystem {}
 

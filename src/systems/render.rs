@@ -8,7 +8,7 @@ use glium::DepthTest;
 use glium::DrawParameters;
 use glium::Surface;
 use glium::{IndexBuffer, VertexBuffer};
-use specs::{Read, System, Write, WriteStorage, Join, ReadStorage};
+use specs::{Join, Read, ReadStorage, System, Write, WriteStorage};
 
 pub struct RenderSystem {}
 

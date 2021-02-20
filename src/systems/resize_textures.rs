@@ -1,5 +1,5 @@
 use crate::resources::{WindowInfo, WritableTextures};
-use specs::{Read, Write, System};
+use specs::{Read, System, Write};
 
 pub struct ResizeTexturesSystem {}
 
