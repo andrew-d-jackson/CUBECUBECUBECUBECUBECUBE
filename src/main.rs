@@ -87,13 +87,13 @@ fn main() {
     let display = create_window(&event_loop);
     let (width, height) = display.get_framebuffer_dimensions();
 
-    let the_rock = TexturedModel::new("TheRock".to_string(), &display);
+    let the_rock = TexturedModel::new("map".to_string(), &display);
     let (cube_obj, _) = load_object("./objs/cube/cube.obj".to_string());
-    let map = vxl::load_map("./maps/London.vxl".to_string(), (512, 512, 512));
-    let (vertexes, indices) = map::create_buffers(map.clone(), cube_obj[0].mesh.clone());
-    let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
-    let index_buffer =
-        IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
+    //let map = vxl::load_map("./maps/London.vxl".to_string(), (512, 512, 512));
+   // let (vertexes, indices) = map::create_buffers(map.clone(), cube_obj[0].mesh.clone());
+   // let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
+   //// let index_buffer =
+    //    IndexBuffer::new(&display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
 
     let mut shaders = Shaders::new();
     shaders.create_program(&display, "cube_color".to_string());
@@ -138,20 +138,20 @@ fn main() {
     world.insert(writable_textures);
     world.insert(shaders);
 
-    world
-        .create_entity()
-        .with(Position::new())
-        .with(Model {
-            vertex_buffer: Arc::new(Mutex::new(VertexBufferAny::from(vertex_buffer))),
-            index_buffer: Arc::new(Mutex::new(index_buffer)),
-        })
-        .build();
+  //  world
+  //      .create_entity()
+  //      .with(Position::new())
+ //       .with(Model {
+   //         vertex_buffer: Arc::new(Mutex::new(VertexBufferAny::from(vertex_buffer))),
+ //           index_buffer: Arc::new(Mutex::new(index_buffer)),
+  //      })
+  //      .build();
 
     world
         .create_entity()
         .with(
             Position::new_pos(256.0f32, 380.0, 256.0)
-                .scale(0.5, 0.5, 0.5)
+                .scale(0.05, 0.05, 0.05)
                 .rotate(0.0, 1.5708 * 3.0, 0.0),
         )
         .with(the_rock)

@@ -2,6 +2,7 @@ use crate::components::{FlyingControls, Light, Model, Position, TexturedModel};
 use crate::quad::*;
 use crate::resources::{ActiveTexture, Shaders, WindowInfo, WritableTextures};
 use glium::index::PrimitiveType;
+use glium::texture::srgb_texture2d_array::SrgbTexture2dArray;
 use glium::uniform;
 use glium::Depth;
 use glium::DepthTest;
@@ -183,22 +184,21 @@ impl<'a> System<'a> for RenderSystem {
 
             for (position, model) in (&positions, &textured_model).join() {
                 let translation = position.get_transform_matrix();
-                let models = model.models.lock().unwrap();
-                for individual_model in models.iter() {
-                    sun_depth_buffer
-                        .draw(
-                            &individual_model.vertex_buffer,
-                            &individual_model.index_buffer,
-                            &shaders.get("cube_depth".to_string()).lock().unwrap(),
-                            &uniform! {
-                                model: *translation.as_ref(),
-                                camera: *sun_camera_matrix,
-                                projection: *sun_projection_matrix,
-                            },
-                            &draw_parameters,
-                        )
-                        .unwrap();
-                }
+                let model_lock = model.model.lock().unwrap();
+                let model_data = model_lock.as_ref().unwrap();
+                sun_depth_buffer
+                    .draw(
+                        &model_data.vertex_buffer,
+                        &model_data.index_buffer,
+                        &shaders.get("cube_depth".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *sun_camera_matrix,
+                            projection: *sun_projection_matrix,
+                        },
+                        &draw_parameters,
+                    )
+                    .unwrap();
             }
 
             sun_distant_depth_buffer.clear_color(1.0, 1.0, 1.0, 1.0);
@@ -226,22 +226,21 @@ impl<'a> System<'a> for RenderSystem {
 
             for (position, model) in (&positions, &textured_model).join() {
                 let translation = position.get_transform_matrix();
-                let models = model.models.lock().unwrap();
-                for individual_model in models.iter() {
-                    sun_distant_depth_buffer
-                        .draw(
-                            &individual_model.vertex_buffer,
-                            &individual_model.index_buffer,
-                            &shaders.get("cube_depth".to_string()).lock().unwrap(),
-                            &uniform! {
-                                model: *translation.as_ref(),
-                                camera: *sun_camera_matrix,
-                                projection: *sun_distant_projection_matrix,
-                            },
-                            &draw_parameters,
-                        )
-                        .unwrap();
-                }
+                let model_lock = model.model.lock().unwrap();
+                let model_data = model_lock.as_ref().unwrap();
+                sun_distant_depth_buffer
+                    .draw(
+                        &model_data.vertex_buffer,
+                        &model_data.index_buffer,
+                        &shaders.get("cube_depth".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *sun_camera_matrix,
+                            projection: *sun_distant_projection_matrix,
+                        },
+                        &draw_parameters,
+                    )
+                    .unwrap();
             }
 
             camera_buffer.clear_color_and_depth((0.0f32, 0.3, 1.0, 0.0), 1.0);
@@ -267,22 +266,24 @@ impl<'a> System<'a> for RenderSystem {
             }
             for (position, model) in (&positions, &textured_model).join() {
                 let translation = position.get_transform_matrix();
-                let models = model.models.lock().unwrap();
-                let textures = model.textures.lock().unwrap();
-                for individual_model in models.iter() {
-                    camera_buffer.draw(
-                        &individual_model.vertex_buffer,
-                        &individual_model.index_buffer,
+                let model_lock = model.model.lock().unwrap();
+                let model_data = model_lock.as_ref().unwrap();
+                let textures_lock = model.textures.lock().unwrap();
+                let textures_data = textures_lock.as_ref().unwrap();
+                camera_buffer
+                    .draw(
+                        &model_data.vertex_buffer,
+                        &model_data.index_buffer,
                         &shaders.get("texture".to_string()).lock().unwrap(),
                         &uniform! {
                             model: *translation.as_ref(),
                             camera: *camera_matrix,
                             projection: *projection,
-                            diffuse_textrue: glium::uniforms::Sampler::new(&textures[individual_model.texture]),
+                            diffuse_textrues: textures_data.sampled(),
                         },
-                        &draw_parameters
-                    ).unwrap();
-                }
+                        &draw_parameters,
+                    )
+                    .unwrap();
             }
 
             camera_normal_buffer.clear_color_and_depth((0.0f32, 0.3, 1.0, 0.0), 1.0);
@@ -309,22 +310,21 @@ impl<'a> System<'a> for RenderSystem {
 
             for (position, model) in (&positions, &textured_model).join() {
                 let translation = position.get_transform_matrix();
-                let models = model.models.lock().unwrap();
-                for individual_model in models.iter() {
-                    camera_normal_buffer
-                        .draw(
-                            &individual_model.vertex_buffer,
-                            &individual_model.index_buffer,
-                            &shaders.get("cube_normal".to_string()).lock().unwrap(),
-                            &uniform! {
-                                model: *translation.as_ref(),
-                                camera: *camera_matrix,
-                                projection: *projection,
-                            },
-                            &draw_parameters,
-                        )
-                        .unwrap();
-                }
+                let model_lock = model.model.lock().unwrap();
+                let model_data = model_lock.as_ref().unwrap();
+                camera_normal_buffer
+                    .draw(
+                        &model_data.vertex_buffer,
+                        &model_data.index_buffer,
+                        &shaders.get("cube_normal".to_string()).lock().unwrap(),
+                        &uniform! {
+                            model: *translation.as_ref(),
+                            camera: *camera_matrix,
+                            projection: *projection,
+                        },
+                        &draw_parameters,
+                    )
+                    .unwrap();
             }
 
             composed_buffer.clear_color_and_depth((0.0f32, 0.0, 0.0, 0.0), 1.0);

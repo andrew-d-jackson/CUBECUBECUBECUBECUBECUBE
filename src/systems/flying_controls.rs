@@ -16,8 +16,8 @@ impl<'a> System<'a> for FlyingControlsSystem {
 
     fn run(&mut self, (inputs, window_info, mut position, flying_controls): Self::SystemData) {
         let dt = window_info.delta_time;
-        let rot_mul = 3.0f32;
-        let mov_mul = 200.0f32;
+        let rot_mul = 1.0f32;
+        let mov_mul = 20.0f32;
 
         for (posistion, _) in (&mut position, &flying_controls).join() {
             let forward_vector =

@@ -1,7 +1,6 @@
 use glium::index::PrimitiveType;
 use glium::{implement_vertex, Display, IndexBuffer, VertexBuffer};
 use specs::{Component, VecStorage};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tobj::load_obj;
 
@@ -10,20 +9,20 @@ pub struct TexturedVertex {
     pub position: [f32; 3],
     pub normal: [f32; 3],
     pub texcoords: [f32; 2],
+    pub texindex: u32,
 }
 
-implement_vertex!(TexturedVertex, position, normal, texcoords);
+implement_vertex!(TexturedVertex, position, normal, texcoords, texindex);
 
 pub struct IndividualModel {
     pub vertex_buffer: VertexBuffer<TexturedVertex>,
     pub index_buffer: IndexBuffer<u32>,
-    pub texture: usize,
 }
 
 #[derive(Clone, Default)]
 pub struct TexturedModel {
-    pub textures: Arc<Mutex<Vec<glium::texture::SrgbTexture2d>>>,
-    pub models: Arc<Mutex<Vec<IndividualModel>>>,
+    pub textures: Arc<Mutex<Option<glium::texture::Texture2dArray>>>,
+    pub model: Arc<Mutex<Option<IndividualModel>>>,
 }
 
 impl Component for TexturedModel {
@@ -36,17 +35,40 @@ unsafe impl Sync for TexturedModel {}
 impl TexturedModel {
     pub fn new(name: String, display: &Display) -> Self {
         let (models, materials) = load_obj(format!("objs/{}/{}.obj", name, name), true).unwrap();
-        let mut individual_models: Vec<IndividualModel> = vec![];
-        let mut texture_indexes: HashMap<String, usize> = HashMap::new();
-        let mut textures: Vec<glium::texture::SrgbTexture2d> = vec![];
+        let mut material_order: Vec<String> = vec![];
+        let mut vertexes: Vec<TexturedVertex> = vec![];
+        let mut indexes: Vec<u32> = vec![];
 
-        let mut material_vertexes: HashMap<String, Vec<TexturedVertex>> = HashMap::new();
-        let mut material_indexes: HashMap<String, Vec<u32>> = HashMap::new();
+        let textureArray = {
+            let mut raw_images = vec![];
+            for material in materials.iter() {
+                let material_name = &material.diffuse_texture;
+                material_order.push(material_name.clone());
+                let img = image::open(format!("objs/{}/{}", name, &material_name))
+                    .unwrap()
+                    .into_rgba();
+                let n_img = image::imageops::resize(&img, 1024, 1024, image::imageops::FilterType::Nearest);
+                let img_dimensions = n_img.dimensions();
+                let img_raw = glium::texture::RawImage2d::from_raw_rgba_reversed(
+                    &n_img.into_raw(),
+                    img_dimensions,
+                );
+                raw_images.push(img_raw);
+            }
+            glium::texture::Texture2dArray::new(display, raw_images).unwrap()
+        };
 
         for m in models.iter() {
             let mesh = &m.mesh;
+
             if let Some(material_id) = mesh.material_id {
-                let mut vertexes: Vec<TexturedVertex> = vec![];
+                let material = &materials[material_id];
+                let material_index = material_order
+                    .iter()
+                    .position(|m| m == &material.diffuse_texture)
+                    .unwrap() as u32;
+                let starting_index = vertexes.len() as u32;
+
                 for i in 0..mesh.positions.len() / 3 {
                     vertexes.push(TexturedVertex {
                         position: [
@@ -59,62 +81,24 @@ impl TexturedModel {
                             mesh.texcoords[i * 2] as f32,
                             mesh.texcoords[i * 2 + 1] as f32,
                         ],
+                        texindex: material_index,
                     });
                 }
 
-                let material = &materials[material_id];
-                if !material_vertexes.contains_key(&material.diffuse_texture) {
-                    material_vertexes.insert(material.diffuse_texture.clone(), vertexes);
-                    material_indexes.insert(material.diffuse_texture.clone(), mesh.indices.clone());
-                } else {
-                    let starting_index = material_vertexes
-                        .get(&material.diffuse_texture)
-                        .unwrap()
-                        .len() as u32;
-                    material_vertexes
-                        .get_mut(&material.diffuse_texture)
-                        .unwrap()
-                        .append(&mut vertexes);
-                    let new_indexes: Vec<u32> =
-                        mesh.indices.iter().map(|i| i + starting_index).collect();
-                    material_indexes
-                        .get_mut(&material.diffuse_texture)
-                        .unwrap()
-                        .append(&mut new_indexes.clone());
-                }
+                let mut new_indexes: Vec<u32> =
+                    mesh.indices.iter().map(|i| i + starting_index).collect();
+                indexes.append(&mut new_indexes);
             }
         }
-
-        for (material_name, vertexes) in material_vertexes {
-            let indices = material_indexes.get(&material_name).unwrap();
-            let vertex_buffer = VertexBuffer::new(display, &vertexes.as_ref()).unwrap();
-            let index_buffer =
-                IndexBuffer::new(display, PrimitiveType::TrianglesList, &indices.as_ref()).unwrap();
-
-            if !texture_indexes.contains_key(&material_name) {
-                let img = image::open(format!("objs/{}/{}", name, &material_name))
-                    .unwrap()
-                    .into_rgba();
-                let img_dimensions = img.dimensions();
-                let img_raw = glium::texture::RawImage2d::from_raw_rgba_reversed(
-                    &img.into_raw(),
-                    img_dimensions,
-                );
-                let diffuse_texture = glium::texture::SrgbTexture2d::new(display, img_raw).unwrap();
-                textures.push(diffuse_texture);
-                texture_indexes.insert(material_name.clone(), textures.len() - 1);
-            }
-
-            individual_models.push(IndividualModel {
+        let vertex_buffer = VertexBuffer::new(display, &vertexes.as_ref()).unwrap();
+        let index_buffer =
+            IndexBuffer::new(display, PrimitiveType::TrianglesList, &indexes.as_ref()).unwrap();
+        Self {
+            model: Arc::new(Mutex::new(Some(IndividualModel {
                 vertex_buffer,
                 index_buffer,
-                texture: texture_indexes.get(&material_name).unwrap().clone(),
-            });
-        }
-
-        Self {
-            models: Arc::new(Mutex::new(individual_models)),
-            textures: Arc::new(Mutex::new(textures)),
+            }))),
+            textures: Arc::new(Mutex::new(Some(textureArray))),
         }
     }
 }
