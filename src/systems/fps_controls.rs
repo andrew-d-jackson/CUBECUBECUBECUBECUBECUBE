@@ -15,7 +15,6 @@ impl FPSSystem {
         let x: usize = point.x as usize;
         let y: usize = 512 - point.y as usize;
         let z: usize = point.z as usize;
-        println!("{} {} {}", x, y, z);
         match self.map[x][z][y] {
             Some(_) => true,
             None => false,
@@ -93,7 +92,6 @@ impl<'a> System<'a> for FPSSystem {
             if self.velocity.y <= -0.99f32 {
                 self.velocity.y = -0.99
             }
-            println!("{}", self.velocity.y);
             let mut new_position = posistion.get_pos_vec();
             let mut test = new_position + glm::vec3(self.velocity.x, 0.0, 0.0);
             if !self.is_points_blocked(test) {
@@ -103,7 +101,6 @@ impl<'a> System<'a> for FPSSystem {
             if !self.is_points_blocked(test) {
                 new_position = new_position + glm::vec3(0.0, self.velocity.y, 0.0);
             } else {
-                println!("Stopped on Y");
                 self.velocity.y = 0.0;
             }
             test = new_position + glm::vec3(0.0, 0.0, self.velocity.z);

@@ -87,8 +87,8 @@ fn main() {
     let display = create_window(&event_loop);
     let (width, height) = display.get_framebuffer_dimensions();
 
-    let the_rock = TexturedModel::new("./objs/TheRock2.obj".to_string(), &display);
-    let (cube_obj, _) = load_object("./objs/cube.obj".to_string());
+    let the_rock = TexturedModel::new("TheRock".to_string(), &display);
+    let (cube_obj, _) = load_object("./objs/cube/cube.obj".to_string());
     let map = vxl::load_map("./maps/London.vxl".to_string(), (512, 512, 512));
     let (vertexes, indices) = map::create_buffers(map.clone(), cube_obj[0].mesh.clone());
     let vertex_buffer = VertexBuffer::new(&display, &vertexes.as_ref()).unwrap();
@@ -151,11 +151,10 @@ fn main() {
         .create_entity()
         .with(
             Position::new_pos(256.0f32, 380.0, 256.0)
-                .scale(0.1, 0.1, 0.1)
-                .rotate(0.1, 0.4, 0.3),
+                .scale(0.5, 0.5, 0.5)
+                .rotate(0.0, 1.5708 * 3.0, 0.0),
         )
         .with(the_rock)
-        .with(RotateRandomly {})
         .build();
 
     world
@@ -166,10 +165,7 @@ fn main() {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(UpdateWindowSystem::new())
-        .with_thread_local(FPSSystem {
-            map: map,
-            velocity: glm::vec3(0.0f32, 0.0, 0.0),
-        })
+        .with_thread_local(FlyingControlsSystem {})
         .with_thread_local(RotateRandomlySystem {})
         .with_thread_local(SwitchActiveTextureSystem {})
         .with_thread_local(ReloadShadersSystem {})

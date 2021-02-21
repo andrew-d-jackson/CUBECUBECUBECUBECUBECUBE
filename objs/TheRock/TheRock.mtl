@@ -5,7 +5,7 @@ newmtl Texture0
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_eyeL_hi.jpg
+    map_Kd materials/TheRock2_eyeL_hi.jpg
 
 newmtl Texture1
     Ns 20
@@ -14,7 +14,7 @@ newmtl Texture1
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_eyeR_hi.jpg
+    map_Kd materials/TheRock2_eyeR_hi.jpg
 
 newmtl Texture2
     Ns 20
@@ -23,7 +23,7 @@ newmtl Texture2
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_skin_hi.jpg
+    map_Kd materials/TheRock2_skin_hi.jpg
 
 newmtl Texture3
     Ns 20
@@ -32,7 +32,7 @@ newmtl Texture3
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_sock.jpg
+    map_Kd materials/TheRock2_sock.jpg
 
 newmtl Texture4
     Ns 20
@@ -41,7 +41,7 @@ newmtl Texture4
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_teethLower.jpg
+    map_Kd materials/TheRock2_teethLower.jpg
 
 newmtl Texture5
     Ns 20
@@ -50,7 +50,7 @@ newmtl Texture5
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_teethUpper.jpg
+    map_Kd materials/TheRock2_teethUpper.jpg
 
 newmtl Texture6
     Ns 20
@@ -59,5 +59,5 @@ newmtl Texture6
     Kd 0.7 0.7 0.7
     Ks 0 0 0
     Ka 0 0 0
-    map_Kd TheRock2_tongue.jpg
+    map_Kd materials/TheRock2_tongue.jpg
 

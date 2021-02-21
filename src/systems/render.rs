@@ -265,10 +265,10 @@ impl<'a> System<'a> for RenderSystem {
                     )
                     .unwrap();
             }
-
             for (position, model) in (&positions, &textured_model).join() {
                 let translation = position.get_transform_matrix();
                 let models = model.models.lock().unwrap();
+                let textures = model.textures.lock().unwrap();
                 for individual_model in models.iter() {
                     camera_buffer.draw(
                         &individual_model.vertex_buffer,
@@ -278,7 +278,7 @@ impl<'a> System<'a> for RenderSystem {
                             model: *translation.as_ref(),
                             camera: *camera_matrix,
                             projection: *projection,
-                            diffuse_textrue: glium::uniforms::Sampler::new(&individual_model.texture),
+                            diffuse_textrue: glium::uniforms::Sampler::new(&textures[individual_model.texture]),
                         },
                         &draw_parameters
                     ).unwrap();
